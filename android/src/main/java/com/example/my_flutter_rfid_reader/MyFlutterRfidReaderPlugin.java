@@ -74,7 +74,7 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
 
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
-        Log.e("onAttachedToEngine", "onAttachedToEngine");
+        Log.i("onAttachedToEngine", "onAttachedToEngine");
         applicationContext = flutterPluginBinding.getApplicationContext();
 
         flutter_channel = new BasicMessageChannel<>(
@@ -91,8 +91,8 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
             arguments = castMap(message, String.class, Object.class);
             if (arguments == null) return;
             String key = getCurrentKey();
-            Log.e("currentKey", key);
-            Log.e("action", action_map.keySet().toString());
+            Log.i("currentKey", key);
+            Log.i("action", action_map.keySet().toString());
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 Objects.requireNonNull(action_map.get(key)).accept(key);
             }
@@ -105,6 +105,7 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
         else if (arguments.containsKey("closeConnect"))             key = "closeConnect";
         else if (arguments.containsKey("turnOnPower"))              key = "turnOnPower";
         else if (arguments.containsKey("turnOffPower"))             key = "turnOffPower";
+        else if (arguments.containsKey("querySerialNumber"))        key = "querySerialNumber";
         else if (arguments.containsKey("startReader"))              key = "startReader";
         else if (arguments.containsKey("startReaderEpc"))           key = "startReaderEpc";
         else if (arguments.containsKey("readerOver"))               key = "readerOver";
@@ -118,6 +119,7 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
         action_map.put("closeConnect",             this :: closeConnect);
         action_map.put("turnOnPower",              this :: turnOnPower);
         action_map.put("turnOffPower",             this :: turnOffPower);
+        action_map.put("querySerialNumber",        this :: querySerialNumber);
         action_map.put("startReader",              this :: startReader);
         action_map.put("startReaderEpc",           this :: startReaderEpc);
         action_map.put("readerOver",               this :: readerOver);
@@ -130,16 +132,19 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
         if (value == null) return;
         if (!(boolean) value) return;
         CONNECT_SUCCESS = client.openHdSerial("13:115200", 1000);
-        Log.e("连接", "连接中。。。。。");
+        // 连接中
+        Log.i("connectInfo", "Connecting......");
         if (CONNECT_SUCCESS) {
-            Log.e("连接", "连接成功");
+            // 连接成功
+            Log.i("connectInfo", "Successful connection");
             message_map.clear();
-            message_map.put("connectMessage", "连接成功");
+            message_map.put("connectMessage", "Successful connection");
             flutter_channel.send(message_map);
         } else {
-            Log.e("连接", "连接失败，设备不支持RFID");
+            // 连接失败，此设备不支持RFID
+            Log.e("connectInfo", "Connection failed. This device does not support RFID");
             message_map.clear();
-            message_map.put("connectMessage", "连接失败");
+            message_map.put("connectMessage", "Connection failed. This device does not support RFID");
             flutter_channel.send(message_map);
         }
     }
@@ -149,8 +154,10 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
         if (!(boolean) value) return;
         client.close();
         CONNECT_SUCCESS = false;
+        // 连接已关闭
+        Log.i("connectInfo", "The connection has been closed.");
         message_map.clear();
-        message_map.put("connectMessage", "连接已关闭");
+        message_map.put("connectMessage", "The connection has been closed.");
         flutter_channel.send(message_map);
     }
     private void turnOnPower(String key) {
@@ -158,48 +165,63 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
         if (value == null) return;
         if (!(boolean) value) return;
         if (!CONNECT_SUCCESS) {
-            Log.e("上电", "上电失败");
+            // 上电失败，未建立连接
+            Log.e("powerInfo", "Power-on failed. No connection was established. Please establish a connection first.");
             message_map.clear();
-            message_map.put("powerMessage", "上电失败，未建立连接，请先建立连接");
+            message_map.put("powerMessage", "Power-on failed. No connection was established. Please establish a connection first");
             flutter_channel.send(message_map);
             POWER_ON = false;
             return;
         }
-        Log.e("上电", "上电成功");
         client.hdPowerOn();
-        MsgAppGetReaderInfo msgAppGetReaderInfo = new MsgAppGetReaderInfo();
-        client.sendSynMsg(msgAppGetReaderInfo);
-        String serial_number;
-        if (msgAppGetReaderInfo.getRtCode() == 0) {
-            serial_number = msgAppGetReaderInfo.getReaderSerialNumber();
-            Log.e("serial_number", serial_number);
-            message_map.clear();
-            message_map.put("powerMessage", "上电成功#" + serial_number);
-            flutter_channel.send(message_map);
-            POWER_ON = true;
-        } else {
-            Log.e("serial_number", msgAppGetReaderInfo.getRtCode() + "");
-            message_map.clear();
-            message_map.put("powerMessage", "未查询到流水号");
-            flutter_channel.send(message_map);
-        }
+        POWER_ON = true;
+        // 上电成功
+        Log.i("powerInfo", "Power-on successful");
+        message_map.clear();
+        message_map.put("powerMessage", "Power-on successful");
+        flutter_channel.send(message_map);
     }
     private void turnOffPower(String key) {
         Object value = arguments.get(key);
         if (value == null) return;
         if (!(boolean) value) return;
         if (CONNECT_SUCCESS) {
-            Log.e("下电", "下电成功");
             client.hdPowerOff();
-            message_map.clear();
-            message_map.put("powerMessage", "下电成功");
-            flutter_channel.send(message_map);
             POWER_ON = false;
+            // 下电成功
+            Log.i("powerInfo", "Power-off successful");
+            message_map.clear();
+            message_map.put("powerMessage", "Power-off successful");
+            flutter_channel.send(message_map);
+
             epc_message.clear();
         } else {
-            Log.e("下电", "下电失败");
+            // 下电失败
+            Log.i("powerInfo", "Power-off failed");
             message_map.clear();
-            message_map.put("powerMessage", "下电失败，未建立连接，请先建立连接");
+            message_map.put("powerMessage", "Power-off failed. No connection was established. Please establish a connection firs.");
+            flutter_channel.send(message_map);
+        }
+    }
+    private void querySerialNumber(String key) {
+        Object value = arguments.get(key);
+        if (value == null) return;
+        if (!(boolean) value) return;
+        MsgAppGetReaderInfo msgAppGetReaderInfo = new MsgAppGetReaderInfo();
+        client.sendSynMsg(msgAppGetReaderInfo);
+        String serial_number;
+        if (msgAppGetReaderInfo.getRtCode() == 0) {
+            serial_number = msgAppGetReaderInfo.getReaderSerialNumber();
+            // 设备流水号
+            Log.e("serial_number", serial_number);
+            message_map.clear();
+            message_map.put("powerMessage", "Equipment serial number:" + serial_number);
+            flutter_channel.send(message_map);
+        } else {
+            Log.e("serial_number", msgAppGetReaderInfo.getRtCode() + "");
+            message_map.clear();
+            // 查询设备流水号失败
+            message_map.put("powerMessage", "Failed to query the device serial number");
             flutter_channel.send(message_map);
         }
     }
@@ -207,16 +229,19 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
         Object value = arguments.get(key);
         if (value == null) return;
         if (!(boolean) value) return;
-        Log.e("connect_stat", CONNECT_SUCCESS + "");
         if (!CONNECT_SUCCESS) {
             message_map.clear();
-            message_map.put("readerOperationMessage", "未连接，请先进行连接并上电操作");
+            // 未连接，请先进行连接并上电操作
+            Log.e("readerOperationInfo", "It is not connected");
+            message_map.put("readerOperationMessage", "It is not connected. Please connect and power on first");
             flutter_channel.send(message_map);
             return;
         }
         if (!POWER_ON) {
             message_map.clear();
-            message_map.put("readerOperationMessage", "未上电，请先进行上电操作");
+            // 未上电，请先进行上电操作
+            Log.e("readerOperationInfo", "It has not been powered on");
+            message_map.put("readerOperationMessage", "It has not been powered on. Please perform the power-on operation first");
             flutter_channel.send(message_map);
             return;
         }
@@ -226,23 +251,22 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
         client.sendSynMsg(msgBaseInventoryEpc);
         boolean operationSuccess = false;
         if (0x00 == msgBaseInventoryEpc.getRtCode()) {
-            // Log.e("读卡", "操作成功");
-            Log.e("读卡", "操作成功");
+            // 读卡成功
+            Log.i("readerOperationInfo", "Card reading was successful.");
             operationSuccess = true;
         } else {
-            // Log.e("读卡", "操作失败");
             message_map.clear();
             message_map.put("readerOperationMessage",
-                    "读卡操作失败：" + msgBaseInventoryEpc.getRtCode() + msgBaseInventoryEpc.getRtMsg());
+                    "Card reading was failed:" + msgBaseInventoryEpc.getRtCode() + msgBaseInventoryEpc.getRtMsg());
             flutter_channel.send(message_map);
-            Log.e("读卡", "操作失败");
+            Log.i("readerOperationInfo", "Card reading was failed");
         }
         // 搞不懂为什么要在外层进行通讯才行，在里面发送的话会发送不了
         // 并且通讯方法只能在主线程中调用，无法通过创建新线程处理
         if (operationSuccess) {
-            Log.e("读卡操作", "读卡操作成功");
+            Log.i("readerOperationInfo", "Card reading was successful.");
             message_map.clear();
-            message_map.put("readerOperationMessage", "读卡操作成功");
+            message_map.put("readerOperationMessage", "Card reading was successful.");
             flutter_channel.send(message_map);
         }
     }
@@ -250,9 +274,10 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
         Object value = arguments.get(key);
         if (value == null) return;
         if (!(boolean) value) return;
-        Log.e("start_reader_epc", "开始读数据");
+        // 开始读取数据
+        Log.i("readerEpcInfo", "Start reading the data");
         if (APPEAR_OVER) {
-            Log.e("start_reader_epc", "读数据");
+            Log.i("readerEpcInfo", "Reading the data ......");
             message_map.clear();
             epc_message.add("OK");   // 当未读取到数据时，Flet端会收取不到信息，添加一条读取数据完成的标识
             message_map.put("epcMessages", epc_message);
@@ -262,19 +287,22 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
         } else {
             message_map.clear();
             List<String> message_list = new LinkedList<>();
-            message_list.add("未上报结束");
+            // 未上报结束
+            Log.e("readerEpcInfo", "Unfinished reporting");
+            message_list.add("Unfinished reporting");
             message_map.put("epcMessages", message_list);
             flutter_channel.send(message_map);
-            Log.e("appear_over_not", "未上报结束");
+            Log.i("appear_over_not", "Unfinished reporting");
         }
     }
     private void writeEpcData(String key) {
         String write_epc_data = (String) arguments.get(key);
         if (write_epc_data == null) return;
-        Log.e("write_epc_data", write_epc_data);
+        Log.i("writeEpcDataInfo", write_epc_data);
         String epc_data = write_epc_data.split("&")[0];
         int epc_data_area = Integer.parseInt(write_epc_data.split("&")[1]);
         MsgBaseWriteEpc msgBaseWriteEpc = new MsgBaseWriteEpc();
+        // 0:保留区; 1:EPC 区; 2: TID 区; 3:用户数据区
         msgBaseWriteEpc.setArea(epc_data_area);
         msgBaseWriteEpc.setStart(1);     // 起始地址
         msgBaseWriteEpc.setAntennaEnable(EnumG.AntennaNo_1);
@@ -284,8 +312,8 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
                 epc_data = getPc(valueLen) + padLeft(epc_data, valueLen * 4);
             }
             msgBaseWriteEpc.setHexWriteData(epc_data);
-            Log.e("writeEpcData", epc_data);
-            Log.e("writeEpcData", epc_data + Arrays.toString(epc_data.getBytes()));
+            Log.i("writeEpcDataInfo", epc_data);
+            Log.i("writeEpcDataInfo", epc_data + Arrays.toString(epc_data.getBytes()));
         }
         client.sendSynMsg(msgBaseWriteEpc);
         byte code = msgBaseWriteEpc.getRtCode();
@@ -305,11 +333,11 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (READER_OVER) {
-                    Log.e("startRfidBroadcast", "startScan");
+                    Log.i("startRfidBroadcast", "startScan");
                     message_map.clear();
                     message_map.put("rfidBroadcast", "startScan");
                     flutter_channel.send(message_map);
-                    Log.e("startRfidBroadcast", message_map.toString());
+                    Log.i("startRfidBroadcast", message_map.toString());
                     READER_OVER = false;
                 }
             }
@@ -320,9 +348,11 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
                 startScanBroadcastReceiver, filter);
         READER_OVER = true;
         message_map.clear();
-        message_map.put("rfidBroadcast", "已经注册广播：" + startScanBroadcastReceiver.toString());
+        // 已经注册广播
+        Log.i("rfidBroadcastInfo", "Registered for broadcasting");
+        message_map.put("rfidBroadcast", "Registered for broadcasting:" + startScanBroadcastReceiver.toString());
         flutter_channel.send(message_map);
-        Log.e("startRfidBroadcast", message_map.toString());
+        Log.i("startRfidBroadcast", message_map.toString());
     }
     private void stopListenerBroadcast(String key) {
         Object value = arguments.get(key);
@@ -330,7 +360,8 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
         if (!(boolean) value) return;
         applicationContext.unregisterReceiver(startScanBroadcastReceiver);
         message_map.clear();
-        message_map.put("rfidBroadcastMessage", "rfid广播已注销");
+        Log.i("rfidBroadcastInfo", "RFID broadcasting has been cancelled");
+        message_map.put("rfidBroadcastMessage", "RFID broadcasting has been cancelled");
         flutter_channel.send(message_map);
     }
     private void setWriteMessage(byte code) {
@@ -338,61 +369,74 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
         String write_message;
         String log_write_tag = "writeEpcData";
         String log_write_message;
-        switch (code) {
-            case 0X00:
-                log_write_message = "写入成功";
-                write_message = "写入成功" + code;
-                break;
-            case 0X01:
-                log_write_message = "天线端口参数错误";
-                write_message = "天线端口参数错误" + code;
-                break;
-            case 0X02:
-                log_write_message = "选择参数错误";
-                write_message = "选择参数错误" + code;
-                break;
-            case 0X03:
-                log_write_message = "写入参数错误";
-                write_message = "选择参数错误" + code;
-                break;
-            case 0X04:
-                log_write_message = "CPC校验错误";
-                write_message = "CPC校验错误" + code;
-                break;
-            case 0X05:
-                log_write_message = "功率不足";
-                write_message = "功率不足" + code;
-                break;
-            case 0X06:
-                log_write_message = "数据区溢出";
-                write_message = "数据区溢出" + code;
-                break;
-            case 0X07:
-                log_write_message = "数据区被锁定";
-                write_message = "数据区被锁定" + code;
-                break;
-            case 0X08:
-                log_write_message = "访问密码错误";
-                write_message = "访问密码错误" + code;
-                break;
-            case 0X09:
-                log_write_message = "其他标签错误";
-                write_message = "其他标签错误" + code;
-                break;
-            case 0X0A:
-                log_write_message = "标签丢失";
-                write_message = "标签丢失" + code;
-                break;
-            case 0X0B:
-                log_write_message = "读写器发送指令错误";
-                write_message = "读写器发送指令错误" + code;
-                break;
-            default:
-                log_write_message = "其他错误";
-                write_message = "其他错误";
-                break;
-        }
-        Log.e(log_write_tag, log_write_message);
+        write_message = switch (code) {
+            case 0X00 -> {
+                // 写入成功
+                log_write_message = "Write successfully ==> " + code;
+                yield "Write successfully";
+            }
+            case 0X01 -> {
+                // 天线端口参数错误
+                log_write_message = "The antenna port parameters are incorrect ==> " + code;
+                yield "The antenna port parameters are incorrect";
+            }
+            case 0X02 -> {
+                // 选择参数错误
+                log_write_message = "Incorrect selection of parameters ==> " + code;
+                yield "Incorrect selection of parameters";
+            }
+            case 0X03 -> {
+                // 写入参数错误
+                log_write_message = "Writing parameter error ==> " + code;
+                yield "Writing parameter error";
+            }
+            case 0X04 -> {
+                // CPC校验错误
+                log_write_message = "CPC verification error ==> " + code;
+                yield "CPC verification error";
+            }
+            case 0X05 -> {
+                // 功率不足
+                log_write_message = "Underpowered ==> " + code;
+                yield "Underpowered";
+            }
+            case 0X06 -> {
+                // 数据区溢出
+                log_write_message = "Data area overflow ==> " + code;
+                yield "Data area overflow";
+            }
+            case 0X07 -> {
+                // 数据区被锁定
+                log_write_message = "The data area is locked ==> " + code;
+                yield "The data area is locked";
+            }
+            case 0X08 -> {
+                // 访问密码错误
+                log_write_message = "Incorrect access password ==> " + code;
+                yield "Incorrect access password";
+            }
+            case 0X09 -> {
+                // 其他标签错误
+                log_write_message = "Other label errors ==> " + code;
+                yield "Other label errors";
+            }
+            case 0X0A -> {
+                // 标签丢失
+                log_write_message = "The label is lost ==> " + code;
+                yield "The label is lost";
+            }
+            case 0X0B -> {
+                // 读写器发送指令错误
+                log_write_message = "The reader sent instructions incorrectly ==> " + code;
+                yield "The reader sent instructions incorrectly";
+            }
+            default -> {
+                // 其他错误
+                log_write_message = "Other error";
+                yield "Other error";
+            }
+        };
+        Log.i(log_write_tag, log_write_message);
         message_map.clear();
         message_map.put(write_tag, write_message);
         flutter_channel.send(message_map);
@@ -442,28 +486,28 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
     private void subscriberHandler() {
         client.onTagEpcLog = (s, logBaseEpcInfo) -> {
             if (logBaseEpcInfo.getResult() == 0) {
-                Log.e("readerEPC", logBaseEpcInfo.getEpc());
+                Log.i("readerEPCInfo", logBaseEpcInfo.getEpc());
                 epc_message.add(logBaseEpcInfo.getEpc());
             }
         };
         client.onTagEpcOver = (s, logBaseEpcOver) -> {
-            Log.e("HandlerTagEpcOver", logBaseEpcOver.getRtMsg());
+            Log.i("tagAppearOverInfo", logBaseEpcOver.getRtMsg());
             // send();
-            Log.e("epcAppearOver", epc_message.toString());
+            Log.i("epcAppearOver", epc_message.toString());
             APPEAR_OVER = true;
         };
 
         client.debugLog = new HandlerDebugLog() {
             public void sendDebugLog(String msg) {
-                Log.e("sendDebugLog",msg);
+                Log.e("sendDebugInfo",msg);
             }
             public void receiveDebugLog(String msg) {
-                Log.e("receiveDebugLog",msg);
+                Log.e("receiveDebugInfo",msg);
             }
 
             @Override
             public void crcErrorLog(String msg) {
-                Log.e("crcErrorLog", msg);
+                Log.i("crcErrorInfo", msg);
             }
         };
     }
