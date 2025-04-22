@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
+import 'operation_code.dart';
 
 class MyFlutterRfidReaderUtil {
   MyFlutterRfidReaderUtil._();
@@ -46,6 +47,34 @@ class MyFlutterRfidReaderUtil {
   }
   void stopListenerBroadcast() {
     flutterChannel.send({"stopListenerBroadcast": true});
+  }
+  Enum getOperation(int code) {
+    switch (code) {
+      case 0:
+        return OperationCode.CONNECT;
+      case 1:
+        return OperationCode.CLOSE_CONNECT;
+      case 2:
+        return OperationCode.TURN_ON_POWER;
+      case 3:
+        return OperationCode.TURN_OFF_POWER;
+      case 4:
+        return OperationCode.QUERY_SERIAL_NUMBER;
+      case 5:
+        return OperationCode.READER;
+      case 6:
+        return OperationCode.READER_DATA;
+      case 7:
+        return OperationCode.WRIATE_DATA;
+      case 8:
+        return OperationCode.REGISTER_BROADCAST;
+      case 9:
+        return OperationCode.UNREGISTER_BROADCAST;
+      case 10:
+        return OperationCode.LISTENER_BROADCAST;
+      default:
+        return OperationCode.ERROR_CODE;
+    }
   }
 
 }
