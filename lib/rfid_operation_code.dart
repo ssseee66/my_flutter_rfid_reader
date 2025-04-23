@@ -1,4 +1,4 @@
-enum OperationCode {
+enum RfidOperationCode {
   CONNECT,
   CLOSE_CONNECT,
   TURN_ON_POWER,

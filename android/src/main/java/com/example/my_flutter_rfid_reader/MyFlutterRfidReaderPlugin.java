@@ -305,7 +305,7 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
         if (APPEAR_OVER) {
             Log.i("readerEpcInfo", "Reading the data ......");
             message_map.clear();
-            epc_message.add("OK");   // 当未读取到数据时，Flet端会收取不到信息，添加一条读取数据完成的标识
+            // epc_message.add("OK");   // 当未读取到数据时，Flet端会收取不到信息，添加一条读取数据完成的标识
             message_map.put("message", epc_message);
             message_map.put("isSuccessful", true);
             message_map.put("operationCode", 6);
@@ -392,6 +392,15 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
         Object value = arguments.get(key);
         if (value == null) return;
         if (!(boolean) value) return;
+        if (startScanBroadcastReceiver == null) {
+            Log.i("rfidBroadcastInfo", "RFID broadcasting has not been registered yet");
+            message_map.clear();
+            message_map.put("message", "RFID broadcasting has not been registered yet");
+            message_map.put("isSuccessful", false);
+            message_map.put("operationCode", 9);
+            flutter_channel.send(message_map);
+            return;
+        }
         applicationContext.unregisterReceiver(startScanBroadcastReceiver);
         message_map.clear();
         Log.i("rfidBroadcastInfo", "RFID broadcasting has been cancelled");
