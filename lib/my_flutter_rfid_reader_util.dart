@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
-import 'flutter_operation_code.dart';
+import 'rfid_operation_code.dart';
 
 class MyFlutterRfidReaderUtil {
   MyFlutterRfidReaderUtil._();
@@ -20,6 +20,9 @@ class MyFlutterRfidReaderUtil {
   void connect() {
     flutterChannel.send({"startConnect": true});
   }
+  void closeConnect() {
+    flutterChannel.send({"closeConnect": true});
+  }
   void turnOnPower() {
     flutterChannel.send({"turnOnPower": true});
   }
@@ -34,6 +37,9 @@ class MyFlutterRfidReaderUtil {
   }
   void readerOver() {
     flutterChannel.send({"readerOver": true});
+  }
+  void querySerialNumber() {
+    flutterChannel.send({"querySerialNumber": true});
   }
   void writeEpcData(int epcDataArea, String epcData) {
     List<int> bytes = utf8.encode(epcData);
@@ -76,5 +82,38 @@ class MyFlutterRfidReaderUtil {
         return RfidOperationCode.ERROR_CODE;
     }
   }
+  String? getWriteDataInfo(int code) {
+    if (writeDataInfoMap.containsKey(code)) {
+      return writeDataInfoMap[code];
+    } else {
+      return "Other error";
+    }
+  }
+  static const Map<int, String> writeDataInfoMap = {
+    // 写入成功
+    0X00 : "Write successfully",
+    // 天线端口参数错误
+    0X01 : "The antenna port parameters are incorrect",
+    // 选择参数错误
+    0X02 : "Incorrect selection of parameters",
+    // 写入参数错误
+    0X03 : "Writing parameter error",
+    // CPC校验错误
+    0X04 : "CPC verification error",
+    // 功率不足
+    0X05 : "Underpowered",
+    // 数据区溢出
+    0X06 : "Data area overflow",
+    // 数据区被锁定
+    0X07 : "The data area is locked",
+    // 访问密码错误
+    0X08 : "Incorrect access password",
+    // 其他标签错误
+    0X09 : "Other label errors",
+    // 标签丢失
+    0X0A : "The label is lost",
+    // 读写器发送指令错误
+    0X0B : "The reader sent instructions incorrectly",
+  };
 
 }
