@@ -10,9 +10,9 @@ mixin MyFlutterRfidReaderMixin<T extends StatefulWidget> on State<T> {
   @override
   void initState() {
     super.initState();
-    util.flutterChannel.setMessageHandler(listenerAndroidHandle);
+    util.flutterChannel.setMessageHandler(listenerRfidAndroidHandle);
   }
 
-  Future<void> listenerAndroidHandle(dynamic message);
+  Future<void> listenerRfidAndroidHandle(dynamic message);
 
 }
