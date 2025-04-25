@@ -381,8 +381,8 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
         READER_OVER = true;
         message_map.clear();
         // 已经注册广播
-        Log.i("rfidBroadcastInfo", "Registered for broadcasting");
-        message_map.put("message", "Registered for broadcasting:" + startScanBroadcastReceiver.toString());
+        Log.i("rfidBroadcastInfo", "Registered for broadcasting: " + startScanBroadcastReceiver.toString());
+        message_map.put("message", "Registered for broadcasting");
         message_map.put("isSuccessful", true);
         message_map.put("operationCode", 8);
         flutter_channel.send(message_map);
@@ -410,76 +410,60 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
         flutter_channel.send(message_map);
     }
     private void setWriteMessage(byte code) {
-        String write_tag = "message";
-        String write_code = "writerEpcMessageCode";
-        String write_message;
         String log_write_tag = "writeEpcDataInfo";
         String log_write_message;
         switch (code) {
             case 0X00 :
                 // 写入成功
                 log_write_message = "Write successfully ==> " + code;
-                write_message = "Write successfully";
                 break;
             case 0X01 :
                 // 天线端口参数错误
                 log_write_message = "The antenna port parameters are incorrect ==> " + code;
-                write_message = "The antenna port parameters are incorrect";
                 break;
             case 0X02 :
                 // 选择参数错误
                 log_write_message = "Incorrect selection of parameters ==> " + code;
-                write_message = "Incorrect selection of parameters";
                 break;
             case 0X03 :
                 // 写入参数错误
                 log_write_message = "Writing parameter error ==> " + code;
-                write_message = "Writing parameter error";
                 break;
             case 0X04 :
                 // CPC校验错误
                 log_write_message = "CPC verification error ==> " + code;
-                write_message = "CPC verification error";
                 break;
             case 0X05 :
                 // 功率不足
                 log_write_message = "Underpowered ==> " + code;
-                write_message = "Underpowered";
                 break;
             case 0X06 :
                 // 数据区溢出
                 log_write_message = "Data area overflow ==> " + code;
-                write_message = "Data area overflow";
                 break;
             case 0X07 :
                 // 数据区被锁定
                 log_write_message = "The data area is locked ==> " + code;
-                write_message = "The data area is locked";
                 break;
             case 0X08 :
                 // 访问密码错误
                 log_write_message = "Incorrect access password ==> " + code;
-                write_message = "Incorrect access password";
                 break;
             case 0X09 :
                 // 其他标签错误
                 log_write_message = "Other label errors ==> " + code;
-                write_message = "Other label errors";
                 break;
             case 0X0A :
                 // 标签丢失
                 log_write_message = "The label is lost ==> " + code;
-                write_message = "The label is lost";
                 break;
             case 0X0B :
                 // 读写器发送指令错误
                 log_write_message = "The reader sent instructions incorrectly ==> " + code;
-                write_message = "The reader sent instructions incorrectly";
                 break;
             default :
                 // 其他错误
                 log_write_message = "Other error";
-                write_message = "Other error";
                 break;
         }
         Log.i(log_write_tag, log_write_message);
