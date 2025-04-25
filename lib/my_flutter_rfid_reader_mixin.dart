@@ -13,6 +13,13 @@ mixin MyFlutterRfidReaderMixin<T extends StatefulWidget> on State<T> {
     util.flutterChannel.setMessageHandler(listenerRfidAndroidHandle);
   }
 
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+    util.flutterChannel.setMessageHandler(null);
+  }
+
   Future<void> listenerRfidAndroidHandle(dynamic message);
 
 }

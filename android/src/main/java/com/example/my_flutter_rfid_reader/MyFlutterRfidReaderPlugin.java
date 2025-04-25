@@ -484,8 +484,7 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
         }
         Log.i(log_write_tag, log_write_message);
         message_map.clear();
-        message_map.put(write_tag, write_message);
-        message_map.put(write_code, code);
+        message_map.put("writeDataCode", code);
         message_map.put("isSuccessful", code == 0X00);
         message_map.put("operationCode", 7);
         flutter_channel.send(message_map);
@@ -530,7 +529,8 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
     }
     @Override
     public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
-        eventChannel.setStreamHandler(null);
+        eventChannel = null;
+        flutter_channel = null;
     }
     private void subscriberHandler() {
         client.onTagEpcLog = (s, logBaseEpcInfo) -> {
