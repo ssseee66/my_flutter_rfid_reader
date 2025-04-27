@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
+import 'package:my_flutter_rfid_reader/rfid_operation_failed_code.dart';
 import 'rfid_operation_code.dart';
 
 class MyFlutterRfidReaderUtil {
@@ -71,16 +72,42 @@ class MyFlutterRfidReaderUtil {
       case 6:
         return RfidOperationCode.READER_DATA;
       case 7:
-        return RfidOperationCode.WRIATE_DATA;
+        return RfidOperationCode.WRITE_DATA;
       case 8:
         return RfidOperationCode.REGISTER_BROADCAST;
       case 9:
         return RfidOperationCode.UNREGISTER_BROADCAST;
       case 10:
         return RfidOperationCode.LISTENER_BROADCAST;
+      case 11:
+        return RfidOperationCode.READER_OVER;
+      case 12:
+        return RfidOperationCode.APPEAR_OVER;
       default:
         return RfidOperationCode.ERROR_CODE;
     }
+  }
+  Enum getFailedCode(int code) {
+      switch (code) {
+        case 0:
+          return RfidOperationFailedCode.NOT_SUPPORT_RIFD;
+        case 1:
+          return RfidOperationFailedCode.NOT_CONNECTED;
+        case 2:
+          return RfidOperationFailedCode.NOT_TURN_ON_POWER;
+        case 3:
+          return RfidOperationFailedCode.NOT_APPEAR_OVER;
+        case 4:
+          return RfidOperationFailedCode.QUERY_SERIAL_NUMBER_FAILED;
+        case 5:
+          return RfidOperationFailedCode.READER_OPERATION_FAILED;
+        case 6:
+          return RfidOperationFailedCode.WRITE_DATA_FAILED;
+        case 7:
+          return RfidOperationFailedCode.UNREGISTER_BROADCAST;
+        default:
+          return RfidOperationFailedCode.OTHER_FAILED;
+      }
   }
   String? getWriteDataInfo(int code) {
     if (writeDataInfoMap.containsKey(code)) {

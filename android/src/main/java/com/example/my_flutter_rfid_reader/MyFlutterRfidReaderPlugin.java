@@ -147,6 +147,7 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
             Log.e("connectInfo", "Connection failed. This device does not support RFID");
             message_map.clear();
             message_map.put("message", "Connection failed. This device does not support RFID");
+            message_map.put("failedCode", 0);
             message_map.put("isSuccessful", false);
             message_map.put("operationCode", 0);
             flutter_channel.send(message_map);
@@ -176,6 +177,7 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
             message_map.clear();
             message_map.put("message", "Power-on failed. No connection was established. Please establish a connection first");
             message_map.put("isSuccessful", false);
+            message_map.put("failedCode", 1);
             message_map.put("operationCode", 2);
             flutter_channel.send(message_map);
             POWER_ON = false;
@@ -213,6 +215,7 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
             message_map.clear();
             message_map.put("message", "Power-off failed. No connection was established. Please establish a connection firs.");
             message_map.put("isSuccessful", false);
+            message_map.put("failedCode", 1);
             message_map.put("operationCode", 3);
             flutter_channel.send(message_map);
         }
@@ -239,6 +242,7 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
             // 查询设备流水号失败
             message_map.put("message", "Failed to query the device serial number");
             message_map.put("isSuccessful", false);
+            message_map.put("failedCode", 4);
             message_map.put("operationCode", 4);
             flutter_channel.send(message_map);
         }
@@ -253,6 +257,7 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
             Log.e("readerOperationInfo", "It is not connected");
             message_map.put("message", "It is not connected. Please connect and power on first");
             message_map.put("isSuccessful", false);
+            message_map.put("failedCode", 1);
             message_map.put("operationCode", 5);
             flutter_channel.send(message_map);
             return;
@@ -263,6 +268,7 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
             Log.e("readerOperationInfo", "It has not been powered on");
             message_map.put("message", "It has not been powered on. Please perform the power-on operation first");
             message_map.put("isSuccessful", false);
+            message_map.put("failedCode", 2);
             message_map.put("operationCode", 5);
             flutter_channel.send(message_map);
             return;
@@ -281,6 +287,7 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
             message_map.put("message",
                     "Card reading was failed:" + msgBaseInventoryEpc.getRtCode() + msgBaseInventoryEpc.getRtMsg());
             message_map.put("isSuccessful", false);
+            message_map.put("failedCode", 5);
             message_map.put("operationCode", 5);
             flutter_channel.send(message_map);
             Log.i("readerOperationInfo", "Card reading was failed");
@@ -288,6 +295,8 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
         // 搞不懂为什么要在外层进行通讯才行，在里面发送的话会发送不了
         // 并且通讯方法只能在主线程中调用，无法通过创建新线程处理
         if (operationSuccess) {
+            epc_message.clear();
+            APPEAR_OVER = false;
             Log.i("readerOperationInfo", "Card reading was successful.");
             message_map.clear();
             message_map.put("message", "Card reading was successful.");
@@ -300,8 +309,30 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
         Object value = arguments.get(key);
         if (value == null) return;
         if (!(boolean) value) return;
+        if (!CONNECT_SUCCESS) {
+            message_map.clear();
+            // 未连接，请先进行连接并上电操作
+            Log.e("readerOperationInfo", "It is not connected");
+            message_map.put("message", "It is not connected. Please connect and power on first");
+            message_map.put("isSuccessful", false);
+            message_map.put("failedCode", 1);
+            message_map.put("operationCode", 5);
+            flutter_channel.send(message_map);
+            return;
+        }
+        if (!POWER_ON) {
+            message_map.clear();
+            // 未上电，请先进行上电操作
+            Log.e("readerOperationInfo", "It has not been powered on");
+            message_map.put("message", "It has not been powered on. Please perform the power-on operation first");
+            message_map.put("isSuccessful", false);
+            message_map.put("failedCode", 2);
+            message_map.put("operationCode", 5);
+            flutter_channel.send(message_map);
+            return;
+        }
         // 开始读取数据
-        Log.i("readerEpcInfo", "Start reading the data");
+        Log.i("readerEpcInfo", "Start reading the data" + APPEAR_OVER);
         if (APPEAR_OVER) {
             Log.i("readerEpcInfo", "Reading the data ......");
             message_map.clear();
@@ -310,8 +341,6 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
             message_map.put("isSuccessful", true);
             message_map.put("operationCode", 6);
             flutter_channel.send(message_map);
-            epc_message.clear();
-            APPEAR_OVER = false;
         } else {
             message_map.clear();
             List<String> message_list = new LinkedList<>();
@@ -320,6 +349,7 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
             message_list.add("Unfinished reporting");
             message_map.put("message", message_list);
             message_map.put("isSuccessful", false);
+            message_map.put("failedCode", 3);
             message_map.put("operationCode", 6);
             flutter_channel.send(message_map);
             Log.i("appear_over_not", "Unfinished reporting");
@@ -354,6 +384,11 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
         if (value == null) return;
         if (!(boolean) value) return;
         READER_OVER = true;
+        message_map.clear();
+        message_map.put("message", "Reader over");
+        message_map.put("isSuccessful", true);
+        message_map.put("operationCode", 11);
+        flutter_channel.send(message_map);
     }
     private void startListenerBroadcast(String key) {
         Object value = arguments.get(key);
@@ -381,8 +416,8 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
         READER_OVER = true;
         message_map.clear();
         // 已经注册广播
-        Log.i("rfidBroadcastInfo", "Registered for broadcasting: " + startScanBroadcastReceiver.toString());
-        message_map.put("message", "Registered for broadcasting");
+        Log.i("rfidBroadcastInfo", "Registered for broadcasting");
+        message_map.put("message", "Registered for broadcasting:" + startScanBroadcastReceiver.toString());
         message_map.put("isSuccessful", true);
         message_map.put("operationCode", 8);
         flutter_channel.send(message_map);
@@ -397,6 +432,7 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
             message_map.clear();
             message_map.put("message", "RFID broadcasting has not been registered yet");
             message_map.put("isSuccessful", false);
+            message_map.put("failedCode", 7);
             message_map.put("operationCode", 9);
             flutter_channel.send(message_map);
             return;
@@ -410,6 +446,7 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
         flutter_channel.send(message_map);
     }
     private void setWriteMessage(byte code) {
+        String write_code = "writeDataCode";
         String log_write_tag = "writeEpcDataInfo";
         String log_write_message;
         switch (code) {
@@ -432,7 +469,6 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
             case 0X04 :
                 // CPC校验错误
                 log_write_message = "CPC verification error ==> " + code;
-                break;
             case 0X05 :
                 // 功率不足
                 log_write_message = "Underpowered ==> " + code;
@@ -468,8 +504,11 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
         }
         Log.i(log_write_tag, log_write_message);
         message_map.clear();
-        message_map.put("writeDataCode", code);
+        message_map.put(write_code, code);
         message_map.put("isSuccessful", code == 0X00);
+        if (code != 0X00) {
+            message_map.put("failedCode", 6);
+        }
         message_map.put("operationCode", 7);
         flutter_channel.send(message_map);
     }
@@ -513,21 +552,27 @@ public class MyFlutterRfidReaderPlugin implements FlutterPlugin{
     }
     @Override
     public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
-        eventChannel = null;
-        flutter_channel = null;
+        eventChannel.setStreamHandler(null);
     }
     private void subscriberHandler() {
         client.onTagEpcLog = (s, logBaseEpcInfo) -> {
             if (logBaseEpcInfo.getResult() == 0) {
                 Log.i("readerEPCInfo", logBaseEpcInfo.getEpc());
+                Log.i("epcdata", epc_message.toString());
                 epc_message.add(logBaseEpcInfo.getEpc());
+                Log.i("epcdata", epc_message.toString());
             }
         };
         client.onTagEpcOver = (s, logBaseEpcOver) -> {
-            Log.i("tagAppearOverInfo", logBaseEpcOver.getRtMsg());
             // send();
-            Log.i("epcAppearOver", epc_message.toString());
             APPEAR_OVER = true;
+            Log.i("appearOver", s);
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            Log.i("tagAppearOverInfo", logBaseEpcOver.getRtMsg());
         };
 
         client.debugLog = new HandlerDebugLog() {
