@@ -11,49 +11,62 @@ class MyFlutterRfidReaderUtil {
   static final MyFlutterRfidReaderUtil _instance = MyFlutterRfidReaderUtil._();
 
   BasicMessageChannel flutterChannel = const BasicMessageChannel(
-      "flutter_rfid_android",
+      "my_flutter_rfid_reader",
       StandardMessageCodec()
   );
-
+  BasicMessageChannel messageChannel = const BasicMessageChannel(
+      "null",
+      StandardMessageCodec()
+  );
   void sendMessageToAndroid(String methodName, dynamic arg) async {
-    flutterChannel.send({methodName: arg});
+    messageChannel.send({methodName: arg});
+  }
+  void sendChannelName(String methodName, dynamic channelName) async {
+    flutterChannel.send({methodName: channelName});
+  }
+  void setMessageChannel(String channelName, Future<dynamic> Function(dynamic message) handler) {
+    messageChannel = BasicMessageChannel(channelName, const StandardMessageCodec());
+    messageChannel.setMessageHandler(handler);
   }
   void connect() {
-    flutterChannel.send({"startConnect": true});
+    messageChannel.send({"startConnect": true});
   }
   void closeConnect() {
-    flutterChannel.send({"closeConnect": true});
+    messageChannel.send({"closeConnect": true});
   }
   void turnOnPower() {
-    flutterChannel.send({"turnOnPower": true});
+    messageChannel.send({"turnOnPower": true});
   }
   void turnOffPower() {
-    flutterChannel.send({"turnOffPower": true});
+    messageChannel.send({"turnOffPower": true});
   }
   void reader() {
-    flutterChannel.send({"startReader": true});
+    messageChannel.send({"startReader": true});
   }
   void readerEpc() {
-    flutterChannel.send({"startReaderEpc": true});
+    messageChannel.send({"startReaderEpc": true});
   }
   void readerOver() {
-    flutterChannel.send({"readerOver": true});
+    messageChannel.send({"readerOver": true});
   }
   void querySerialNumber() {
-    flutterChannel.send({"querySerialNumber": true});
+    messageChannel.send({"querySerialNumber": true});
+  }
+  void destroy() {
+    messageChannel.send({"destroy": true});
   }
   void writeEpcData(int epcDataArea, String epcData) {
     List<int> bytes = utf8.encode(epcData);
     String hexEpcData = bytes.map((byte) => byte.toRadixString(16).padLeft(2, '0')).join('');
     String dataArea = epcData.toString();
     String data = "$hexEpcData&$dataArea";
-    flutterChannel.send({"writeEpcData": data});
+    messageChannel.send({"writeEpcData": data});
   }
   void startListenerBroadcast() {
-    flutterChannel.send({"startListenerBroadcast": true});
+    messageChannel.send({"startListenerBroadcast": true});
   }
   void stopListenerBroadcast() {
-    flutterChannel.send({"stopListenerBroadcast": true});
+    messageChannel.send({"stopListenerBroadcast": true});
   }
   Enum getOperation(int code) {
     switch (code) {
